@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gyoza Feast! - 祝・入籍ギフト【最終完全体】</title>
+    <title>Gyoza Feast! - 祝・入籍ギフト</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -16,56 +16,92 @@
         @keyframes delivery-run { 0% { left: -150px; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
         .animate-delivery-run { position: absolute; left: -150px; animation: delivery-run 5s linear infinite; }
         button:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); pointer-events: none; }
+        .font-heavy { font-weight: 900; }
     </style>
 </head>
 <body class="pb-40 sm:pb-48">
+
     <div id="raimon-container" class="flex overflow-hidden opacity-30 py-2 select-none bg-black/5"></div>
     <div id="app-content"></div>
 
     <script>
         // ==========================================
-        // 【1. 全てのデータを最初に定義】
+        // 【管理者設定：ここを書き換えてください】
         // ==========================================
+        
+        // 1. 注文が完了したら true、選ぶ画面に戻すなら false
+        let ORDER_COMPLETED = true; 
+
+        // 2. 配送状況 ('received':受付, 'shipping':配送中, 'delivered':到着済)
+        const ORDER_STATUS = 'shipping'; 
+
+        // 3. 配達員（おじさん）の画像
+        const DELIVERY_MAN_IMAGE = "bike.jpg"; 
+
+        // 4. 到着予定日やメッセージ
+        const COMPLETED_MESSAGE = "全国の餃子職人たちが、順次発送の準備を進めているあるよ！";
+        const DELIVERY_ESTIMATE = "2月上旬頃に到着予定！";
+
+        // ==========================================
+        // 【新たに構築した履歴システム】
+        // ==========================================
+        // 履歴画面に表示したい餃子の情報をここに「直接」入力してください
+        const FINAL_ORDER_HISTORY = [
+            {
+                name: "ミシュランの伝説！岡山「山東水餃大王」水餃子3種極みセット",
+                prefecture: "岡山",
+                quantity: 1,
+                pcs: 40,
+                status: "shipping", // 'shipping' or 'delivered'
+                arrivalDate: "2月2日(月) 到着予定",
+                image: "https://santon-suigyo-daio.com/wp-content/uploads/2022/11/FC_20221107_0004.jpg"
+            },
+            {
+                name: "石川の巨星！『餃子専門店ぽう』食べ応えMAX！大きな餃子人気3種セット",
+                prefecture: "石川",
+                quantity: 1,
+                pcs: 36,
+                status: "preparing",
+                arrivalDate: "順次発送予定",
+                image: "https://otona2020.itembox.design/product/022/000000002208/000000002208-01-l.jpg"
+            },
+            {
+                name: "情熱の紅白！『餃子の餃天』ハレの日を彩る・無添加モチモチ紅白餃子セット",
+                prefecture: "秋田",
+                quantity: 1,
+                pcs: 24,
+                status: "delivered",
+                arrivalDate: "1月28日 到着しました！",
+                image: "https://www.otoriyose.net/upload/item/53/00005393/6683c2dd7910821.jpg"
+            }
+        ];
+
+        // --- 全餃子データ (選択画面用) ---
         const GYOZA_DATA = [
             { id: 7, name: "北海道の至宝！『天のびろく』極上3種食べ比べ・道産素材の共演セット", region: "北海道地方", prefecture: "北海道", description: "千歳発！道産小麦100%のモチモチ皮と, ブランド肉『夢の大地』の旨味。プレミアム・オリジナル・とかちマッシュの3種を一度に。", longDescription: "北海道千歳市で「本当に美味しい餃子を」という想いから生まれた『天のびろく』。最大の特徴は、北海道産の小麦粉を独自にブレンドした皮。ブランド豚『夢の大地』を贅沢に使用し、溢れ出る肉汁はまさに絶品です。", cooking: "多めの差し水で皮をじっくり蒸し上げ、仕上げに油で底面を焼き固めることで、皮の『モチッ』と『カリッ』の対比が際立ちます！", pairing: "冷えた十勝ワイン、または濃厚なコーン茶 🌽", sauce: "まずはそのまま、皮の甘みを感じて。次に岩塩で肉の旨味を引き立てるのが店主のオススメ！", price: 4580, count: 36, tags: ["千歳名物", "道産小麦100%", "夢の大地豚"], color: "bg-blue-50", icon: "🌾", image: "https://www.otoriyose.net/upload/item/62/00006247/344317321b981a9.jpg" },
             { id: 8, name: "中毒性注意！『ぎょうざの宝永』とろ〜り3種ブレンド・魔法のチーズ餃子", region: "北海道地方", prefecture: "北海道", description: "北海道音更町発。パンチの効いた宝永餡に, 特製さいころチーズがゴロゴロ！一度食べたら忘れられない『宝永ファン』急増中の名品。", longDescription: "音更町での創業以来、強烈なパンチと旨味で全国にファンを持つ『宝永』が贈る究極のチーズ餃子。チーズのコクとガツンと効いたニンニクが最高の相性を誇る、まさに悪魔的な美味しさです。", cooking: "チーズが溶け出さないよう、焼き上がりは手早く！フライパンからお皿へ移す瞬間が、チーズが一番輝く瞬間です。", pairing: "強炭酸のハイボール、または濃厚なミルク 🥃", sauce: "何もつけずにそのまま！または黒胡椒をたっぷりかけて。お好みでハチミツを少し垂らすと新世界が開けます。", price: 2680, count: 15, tags: ["音更発祥", "中毒性マックス", "濃厚チーズ"], color: "bg-yellow-50", icon: "🧀", image: "https://www.otoriyose.net/upload/item/48/00004831/dfa372bd6d1f264.jpg" },
             { id: 9, name: "岩手の恵み！『粉夢』とろシャキ食感！しんいちろう餃子（ねばり）", region: "東北地方", prefecture: "岩手", description: "岩手町特産の『ねばり芋』が餡に！とろ〜り＆シャキシャキの驚き食感。にんにく不使用で、いつでも楽しめる麺屋の本格皮餃子。", longDescription: "岩手県岩手町の豊かな農産物を詰め込んだ特製餃子。主役はなんといっても高級種『ねばり芋』。とろ〜っとした滑らかさと、絶妙に残るシャキシャキッとした食感のコントラストが唯一無二の体験です。", cooking: "まずは水餃子で『とろシャキ』感をダイレクトに味わうのがおすすめ！焼きなら、皮のパリッと感と餡の滑らかさが楽しめます。", pairing: "キリッと冷えた日本酒、または地元のリンゴジュース 🍎", sauce: "にんにく不使用なので、醤油と少しの辣油でシンプルに。", price: 2080, count: 24, tags: ["岩手名物", "ねばり芋使用", "にんにく不使用"], color: "bg-emerald-50", icon: "🍠", image: "https://www.otoriyose.net/upload/item/91/00009103/396685c4d01894d.jpg" },
             { id: 10, name: "情熱の紅白！『餃子の餃天』ハレの日を彩る・無添加モチモチ紅白餃子セット", region: "東北地方", prefecture: "秋田", description: "秋田発, 見た目も華やかな紅白の贈り物。化学調味料不使用, 素材の力だけで引き出した圧倒的な旨味と美しさを新生活のお祝いに。", longDescription: "秋田で絶大な支持を得る『餃天』の代名詞。慶事にふさわしい「紅白」の皮は、厳選された国産素材のみを使用し、無添加にこだわり抜いています。入籍祝いにふさわしい、美しき実力派です。", cooking: "紅白を交互に並べて焼くと、食卓が一気におめでたい雰囲気に！差し水は少し多めにするのが、皮のモチモチ感を育てる秘訣です。", pairing: "シャンパン、または秋田の銘酒 🍶", sauce: "タレなしで皮の甘みと餡の旨味を感じて。次に大根おろしポン酢で爽やかに。", price: 3796, count: 24, tags: ["秋田の名店", "紅白でお祝い", "完全無添加"], color: "bg-red-100", icon: "㊗️", image: "https://www.otoriyose.net/upload/item/53/00005393/6683c2dd7910821.jpg" },
             { id: 3, name: "浦和の至宝！『うらわ餃子』3種バラエティ・欲張り全味制覇セット", region: "関東地方", prefecture: "埼玉", description: "埼玉・浦和発！野菜の旨味が主役の『無添加・手作り』。定番・しそ・旨辛、全部入った初回限定の大満足パック。", longDescription: "浦和の住宅街で話題沸騰、並んでも買いたいと評判の「うらわ餃子」。化学調味料不使用で毎日食べても飽きない優しい味わい。お子様からお年寄りまで安心して楽しめる真心餃子です。", cooking: "冷凍のまま多めの差し水で蒸し焼きに。仕上げに油を回しかけてパリッとさせるのが浦和流のコツです！", pairing: "麦茶、または炊き立ての白米のお供に 🍚", sauce: "レギュラーには酢胡椒、しそには lemont と塩がベストマッチ！", price: 5123, count: 30, tags: ["浦和名物", "無添加・安心", "三味三色"], color: "bg-green-50", icon: "🥬", image: "https://imagedelivery.net/QondspN4HIUvB_R16-ddAQ/6020a530c19c45763fd7f2e3/f1c45bb3a91a8e34727a.jpeg" },
-            { id: 11, name: "宇都宮の真髄！『和の中』皮から手作り・医食同源の極み薬膳餃子", region: "関東地方", prefecture: "栃木", description: "宇都宮の人気店。熟練の職人が皮から一枚ずつ手作り。身体に染み渡る薬膳の香りと, モチモチ食感が魂を揺さぶる一品。", longDescription: "餃子の聖地・宇都宮において、独自の輝きを放つ『和の中』。餡には数種類のスパイスが調合された「薬膳」のエッセンスが。健康を願う贈り物にぴったりの餃子です。", cooking: "焼き餃子も絶品ですが、ぜひ『水餃子』でお召し上がりください。皮の本当の美味しさが最も際立ちます。", pairing: "中国茶、または滋味深い温かいスープ 🍲", sauce: "店主推奨は、黒酢に生姜をたっぷりと。薬膳の香りがより華やかになります。", price: 2550, count: 30, tags: ["宇都宮餃子", "皮が主役", "薬膳・健康"], color: "bg-slate-50", icon: "☯️", image: "https://www.otoriyose.net/upload/item/62/00006270/dacab781bd14b4e.jpg" },
+            { id: 11, name: "宇都宮の真髄！『和の中』皮から手作り・医食同源の極み薬膳餃子", region: "関東地方", prefecture: "栃木", description: "宇都宮の人気店。熟練の職人が皮から一枚ずつ手作り。身体に染み渡る薬膳の香りと, モチモチ食感が魂を揺さぶる一品。", longDescription: "餃子の聖地・宇都宮において、独自の輝きを放つ『和の中』。最大の特徴は、注文を受けてから延ばすほどこだわった「皮」。身体の内側から温まる、健康を願う贈り物にぴったりの餃子です。", cooking: "焼き餃子も絶品ですが、ぜひ『水餃子』でお召し上がりください。皮の本当の美味しさが最も際立ちます。", pairing: "中国茶、または滋味深い温かいスープ 🍲", sauce: "店主推奨は、黒酢に生姜をたっぷりと。薬膳の香りがより華やかになります。", price: 2550, count: 30, tags: ["宇都宮餃子", "皮が主役", "薬膳・健康"], color: "bg-slate-50", icon: "☯️", image: "https://www.otoriyose.net/upload/item/62/00006270/dacab781bd14b4e.jpg" },
             { id: 14, name: "石川の巨星！『餃子専門店ぽう』食べ応えMAX！大きな餃子人気3種セット", region: "北陸地方", prefecture: "石川", description: "1個が通常の約2倍！圧倒的なボリュームと, プレーン・生姜・梅の絶妙な三連星。化学調味料不使用で素材の味が活きる逸品。", longDescription: "石川県能美市で愛される、大きな餃子が自慢の専門店『ぽう』。一つひとつ丁寧に手包みされ、溢れ出る肉汁と野菜の甘みが広がります。お腹も心も満たされる「ご馳走」セットです。", cooking: "大きめサイズなので、蒸し時間を少し長めに。焼き上がり直前に強火で一気にパリッとさせれば最高の食感になります！", pairing: "炭酸水、または石川の地酒 🍶", sauce: "梅餃子にはそのまま。生姜餃子には酢胡椒が相性抜群です。", price: 4880, count: 36, tags: ["石川・能美", "ジャンボサイズ", "無添加手作り"], color: "bg-orange-50", icon: "🏵️", image: "https://otona2020.itembox.design/product/022/000000002208/000000002208-01-l.jpg" },
             { id: 6, name: "富山の至宝！『ミッちゃん餃子』モチパリ薄皮・新鮮野菜たっぷりお試しセット", region: "北陸地方", prefecture: "富山", description: "富山で30年以上愛される行列店。野菜の甘みと生姜の香りが弾ける！ニンニク控えめで毎日食べたい優しい味わい。", longDescription: "富山県で不動の人気を誇る『ミッちゃん餃子』。一番のこだわりは、機械を使わず仕上げる独自の『薄皮』。焼けばパリッと、茹でればモチッとする驚きの食感が楽しめます。", cooking: "多めの差し水でしっかり蒸し上げ、最後に強火で焼き色をつけるのが、名物の『モチパリ』食感を引き出すコツです！", pairing: "冷えた白ワイン、または熱々の日本茶 🍵", sauce: "まずはそのまま、素材の甘みを楽しんで. 次に付属の特製タレをつけて召し上がれ！", price: 3400, count: 24, tags: ["富山名物", "野菜たっぷり", "モチパリ食感"], color: "bg-yellow-100", icon: "🥟", image: "https://www.otoriyose.net/upload/item/115/00011548/3f2310173c78c50.jpg" },
-            { id: 5, name: "大阪の超新星！『餃子専門店チャンピオン』パクパク止まらない！黄金のひとくち餃子セット", region: "近畿地方", prefecture: "大阪", description: "大阪・今里で行列必至の人気店. サクふわ食感の極み, 鶏肉と季節のキャベツが奏でる究極のハーモニー。", longDescription: "大阪・今里の餃子激戦区でファンを虜にする『チャンピオン』。一度食べ始めたら最後、お皿が空になるまで手が止まらない「魔力」を秘めたひとくち餃子です。", cooking: "強火で一気に焼き上げるのが正解。小さめなので、焼き時間は短めで皮のパリッと感を最大限に引き出してください！", pairing: "焼酎のソーダ割り、またはスッキリとした烏龍茶 🍵", sauce: "焼きはタレなし、または酢胡椒。水餃子にするなら「塩」だけで素材の甘みを引き立てて。", price: 2750, count: 35, tags: ["大阪・今里", "ひとくち餃子", "鶏肉ベース"], color: "bg-red-50", icon: "🏆", image: "https://cdn.shopify.com/s/files/1/0622/4239/0147/files/IMG_2845.jpg" },
+            { id: 5, name: "大阪の超新星！『餃子専門店チャンピオン』パクパク止まらない！黄金のひとくち餃子セット", region: "近畿地方", prefecture: "大阪", description: "大阪・今里で行列必至の人気店. サクふわ食感の極み, 鶏肉と季節のキャベツが奏でる究極のハーモニー。", longDescription: "大阪・今里の餃子激戦区でファンを虜にする『チャンピオン』。最大の特徴は、季節ごとに工程を微調整した甘みたっぷりのキャベツ。あっさりとしつつもコクのある国産鶏肉を使用。一度食べ始めたら最後、お皿が空になるまで手が止まらない「魔力」を秘めたひとくち餃子です。", cooking: "強火で一気に焼き上げるのが正解。小さめなので、焼き時間は短めで皮のパリッと感を最大限に引き出してください！", pairing: "焼酎のソーダ割り、またはスッキリとした烏龍茶 🍵", sauce: "焼きはタレなし、または酢胡椒。水餃子にするなら「塩」だけで素材の甘みを引き立てて。", price: 2750, count: 35, tags: ["大阪・今里", "ひとくち餃子", "鶏肉ベース"], color: "bg-red-50", icon: "🏆", image: "https://cdn.shopify.com/s/files/1/0622/4239/0147/files/IMG_2845.jpg" },
             { id: 12, name: "伊勢の伝説！『ぎょうざの美鈴』創業昭和38年・一枚一枚手で延ばす究極の手延べ餃子", region: "近畿地方", prefecture: "三重", description: "伊勢神宮近くの超有名店。機械に頼らず, 一枚ずつ皮を延ばし包み上げる職人の技。地元たまり醤油を使った秘伝タレで味わう至高の体験。", longDescription: "昭和38年の創業以来、伊勢で愛される『美鈴』。注文を受けてから皮を延ばすお店の流儀を冷凍で再現。伊勢の誇りを感じる伝統の餃子をお届けします。", cooking: "仕上げに油を多めに使い、揚げ焼きのようにすることで皮の『パリッ』と感が最大限に引き立ちます。", pairing: "伊勢の地ビール、または深みのある緑茶 🍵", sauce: "付属の『特製たまり醤油ダレ』が絶対条件。この深いコクこそが美鈴です。", price: 1900, count: 12, tags: ["伊勢の行列店", "手延べ皮", "昭和38年創業"], color: "bg-amber-50", icon: "🏮", image: "https://image1.shopserve.jp/gyouzanomisuzu-online.com/pic-labo/llimg/t0004_02.gif" },
             { id: 1, name: "ミシュランの伝説！岡山「山東水餃大王」水餃子3種極みセット", region: "中国地方", prefecture: "岡山", description: "ビブグルマン掲載！岡山・日生のレジェンド店。厚さ1mmの限界を超えたモチモチ食感に溺れる。", longDescription: "岡山県日生町で40年以上愛された名店。特級点心師の技が光る「厚さ」にこだわった皮は、一度食べたら忘れられない圧倒的な弾力です。", cooking: "たっぷりのお湯で泳がせるように茹でるだけ。浮き上がってからさらに1分待つのが「究極のモチモチ」を引き出す秘訣！", pairing: "紹興酒、またはキンキンに冷えた中国茶 🍵", sauce: "付属の「秘伝・豆豉（トウチ）タレ」一択。これ以外考えられません。", price: 6310, count: 40, tags: ["ミシュラン掲載", "究極のモチモチ", "岡山・日生名物"], color: "bg-blue-50", icon: "🌟", image: "https://santon-suigyo-daio.com/wp-content/uploads/2022/11/FC_20221107_0004.jpg" },
             { id: 4, name: "下関の至芸！『餃子屋はまだ』職人手包み・4種バラエティ食べ比べ極セット", region: "中国地方", prefecture: "山口", description: "山口・下関の名店. マーボー・大葉・生姜・にんにくの全4味を、熟練の職人が一粒ずつ丁寧に手包み。", longDescription: "山口県下関市で、職人の手包みだからこそ実現できる皮と具の絶妙な密着感。焼き上げた際のジューシーさは感動ものです. 4つの個性が一箱に。初めての方も必ず満足する欲張りセットです。", cooking: "水分が飛んだら少量の油で焼き色を。手包みの薄皮がパリッと仕上がります！", pairing: "キンキンに冷えた炭酸水、またはレモンサワー 🍋", sauce: "4種の味の違いを楽しむため、まずはタレなしで召し上がれ！", price: 7410, count: 48, tags: ["下関名物", "職人手包み", "4種食べ比べ"], color: "bg-orange-50", icon: "🥡", image: "https://imagedelivery.net/QondspN4HIUvB_R16-ddAQ/5f3da475d7e1d840cef4e6d5/575936aee4322829d163.png" },
             { id: 13, name: "長崎の色彩！『台湾料理 老李』彩り鮮やか・厳選5色水餃食べ尽くしセット", region: "九州地方", prefecture: "長崎", description: "長崎・新地中華街の名店。芳寿豚100%の肉汁が弾ける！しそ・とうもろこしなど目にも楽しい5色の贈り物。", longDescription: "最高級「長崎芳寿豚」を使用した餡。二度練りされた手作りの皮は、他では味わえない滑らかな舌触り。長崎の風を感じる華やかな逸品です。", cooking: "凍ったまま投入。浮き上がってから数分、皮がぷっくり膨らむまで茹でるのが『ぷりぷり食感』の正解！", pairing: "凍頂烏龍茶、または台湾ビール 🍺", sauce: "老李特製のタレ、またはシンプルに黒酢だけで素材の香りを引き立てて。", price: 6579, count: 40, tags: ["長崎・中華街", "5色の彩り", "長崎芳寿豚"], color: "bg-pink-50", icon: "🌈", image: "https://www.otoriyose.net/upload/item/121/00012158/878b29dfc1714f9.jpg" },
-            { id: 2, name: "別府のレジェンド！創業昭和22年『ぎょうざ専門店 湖月』極薄皮の芸術品セット", region: "九州地方", prefecture: "大分", description: "大分・別府で愛され続ける行列店. 熟練の職人が手包みした『究極の薄皮』と肉の旨味が爆発。", longDescription: "昭和22年の創業以来、別府の地で不動の人気を誇る専門店。向こう側が透けるほど薄く仕上げられた自家製の皮。お腹も心も満たされる最高のご馳走です。", cooking: "多めの油で揚げ焼きにするのが湖月流！皮のパリパリ感を極限まで引き出し、中の肉汁を閉じ込めるのがポイントです。", pairing: "キンキンに冷えたビール、または大分名産のカボスを搾ったソーダ 🍹", sauce: "まずはタレなしで素材の甘みを。その次は酢多めの醤油ダレでさっぱりと。", price: 6290, count: 50, tags: ["創業昭和22年", "別府の誇り", "完全無添加"], color: "bg-yellow-50", icon: "🥟", image: "https://baseec-img-mng.akamaized.net/images/item/origin/d1dd9492ac43737c751b6943407ad9cd.jpg" }
+            { id: 2, name: "別府のレジェンド！創業昭和22年『ぎょうざ専門店 湖月』極薄皮の芸術品セット", region: "九州地方", prefecture: "大分", description: "大分・別府で愛され続ける行列店. 熟練の職人が手包みした『究極の薄皮』と肉の旨味が爆発。", longDescription: "昭和22年の創業以来、別府の地で不動の人気を誇る専門店。向こう側が透けるほど薄く仕上げられた自家製の皮。お腹も心も満たされる最高のご馳走です。", cooking: "多めの油で揚げ焼きにするのが湖月流！皮のパリッキリ感を極限まで引き出し、中の肉汁を閉じ込めるのがポイントです。", pairing: "キンキンに冷えたビール、または大分名産のカボスを搾ったソーダ 🍹", sauce: "まずはタレなしで素材の甘みを。その次は酢多めの醤油ダレでさっぱりと。", price: 6290, count: 50, tags: ["創業昭和22年", "別府の誇り", "完全無添加"], color: "bg-yellow-50", icon: "🥟", image: "https://baseec-img-mng.akamaized.net/images/item/origin/d1dd9492ac43737c751b6943407ad9cd.jpg" }
         ];
 
-        // --- 2. 管理者設定 ---
-        let ORDER_COMPLETED = true; // trueで履歴画面、falseで選択画面
-        const DELIVERY_MAN_IMAGE = "bike.jpg"; // GitHubにアップロードしたファイル名
-        const ORDER_STATUS = 'shipping'; // 'shipping' または 'delivered'
-        const COMPLETED_MESSAGE = "全国の餃子職人たちが、順次発送の準備を進めているあるよ！";
-        const DELIVERY_ESTIMATE = "2月上旬頃に到着予定！";
-
-        // --- 3. ★重要★ 履歴に表示する餃子のリスト ---
-        const ORDERED_ITEMS = [
-            { id: 7, quantity: 1, status: 'shipping', arrivalDate: '2月2日頃 到着予定' },
-            { id: 10, quantity: 1, status: 'shipping', arrivalDate: '2月2日頃 到着予定' },
-            { id: 14, quantity: 1, status: 'preparing', arrivalDate: '順次発送予定' }
-        ];
-
-        const ACTUAL_LIMIT = 16000;
         const REGIONS = ["北海道地方", "東北地方", "関東地方", "北陸地方", "近畿地方", "中国地方", "九州地方"];
+        const ACTUAL_LIMIT = 16000;
         let cart = {};
 
-        // --- メイン関数 ---
         function init() {
             const raimon = document.getElementById('raimon-container');
             let raimonHtml = "";
-            for(let i=0; i<15; i++) raimonHtml += '<span class="text-lg sm:text-xl mx-2 flex items-center whitespace-nowrap text-white font-serif">回回回 <span class="mx-2 text-xl sm:text-2xl">🍥</span> 回回回</span>';
+            for(let i=0; i<15; i++) raimonHtml += '<span class="text-lg sm:text-xl mx-2 flex items-center whitespace-nowrap text-white font-heavy">回回回 <span class="mx-2 text-xl sm:text-2xl">🍥</span> 回回回</span>';
             raimon.innerHTML = raimonHtml;
             render();
         }
@@ -80,28 +116,38 @@
             if (window.lucide) window.lucide.createIcons();
         }
 
-        // --- 履歴モード描画 ---
+        // --- 1. 配送履歴モード (完全に新構築) ---
         function renderHistoryMode(container) {
-            // ORDERED_ITEMS と GYOZA_DATA を強力に紐付ける
-            const orderedProducts = [];
-            ORDERED_ITEMS.forEach(order => {
-                const p = GYOZA_DATA.find(item => Number(item.id) === Number(order.id));
-                if (p) orderedProducts.push({ ...p, ...order });
-            });
-
-            const totalOrderedCount = orderedProducts.reduce((sum, p) => sum + (p.count * p.quantity), 0);
-            let currentStep = (ORDER_STATUS === 'delivered') ? 3 : 2;
+            const totalOrderedPcs = FINAL_ORDER_HISTORY.reduce((sum, p) => sum + (p.pcs * p.quantity), 0);
+            let currentStep = (ORDER_STATUS === 'delivered') ? 3 : (ORDER_STATUS === 'shipping' ? 2 : 1);
             
+            // 履歴カードのHTMLを生成
+            const historyCards = FINAL_ORDER_HISTORY.map(item => `
+                <div class="group flex flex-col sm:flex-row gap-4 bg-slate-50 border-4 border-black p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2.5rem] relative overflow-hidden transition-transform hover:scale-[1.01]">
+                  <img src="${item.image}" class="w-full sm:w-24 h-40 sm:h-24 rounded-xl sm:rounded-2xl border-2 border-black object-cover" />
+                  <div class="flex-1 min-w-0 font-heavy">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center gap-1 text-[10px] text-slate-400 uppercase italic"><i data-lucide="map-pin" size="10"></i> ${item.prefecture}</div>
+                        ${item.status === 'delivered' ? '<span class="bg-red-600 text-white text-[10px] px-2 font-heavy rounded border border-black shadow-sm uppercase">到着済み</span>' : 
+                          '<span class="bg-yellow-400 text-black text-[10px] px-2 font-heavy rounded border border-black animate-pulse uppercase">配送中</span>'}
+                    </div>
+                    <p class="text-slate-800 text-lg leading-tight italic mb-1">${item.name}</p>
+                    <p class="text-xs text-red-600 mt-1 uppercase">${item.pcs} PCS × ${item.quantity}</p>
+                    <p class="text-[11px] text-slate-500 mt-2 bg-white border border-slate-200 px-2 py-1 rounded-full w-fit italic"><i data-lucide="clock" size="12" class="inline"></i> ${item.arrivalDate}</p>
+                  </div>
+                </div>
+            `).join('');
+
             container.innerHTML = `
               <div class="min-h-screen bg-[#ff4d4d] text-center relative selection:bg-yellow-400 pb-20">
-                <header class="px-4 sm:px-6 py-8 sm:py-12 relative z-10 font-bold">
+                <header class="px-4 sm:px-6 py-8 sm:py-12 relative z-10 font-heavy">
                   <div class="max-w-2xl mx-auto">
                     <div class="mb-8 sm:mb-12 flex justify-between items-center max-w-sm mx-auto relative px-2">
                       <div class="absolute top-1/2 left-0 w-full h-1 bg-black/20 -translate-y-1/2 -z-10"></div>
-                      <div class="absolute top-1/2 left-0 h-1 bg-yellow-400 -translate-y-1/2 -z-10 transition-all duration-1000" style="width: ${currentStep === 2 ? '50%' : '100%'}"></div>
-                      <div class="flex flex-col items-center gap-2 font-bold"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center bg-yellow-400 font-bold"><i data-lucide="check" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-black uppercase text-white bg-black px-2">受付完了</span></div>
-                      <div class="flex flex-col items-center gap-2 font-bold"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center font-bold ${currentStep >= 2 ? 'bg-yellow-400' : 'bg-white'}"><i data-lucide="truck" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-black uppercase ${currentStep >= 2 ? 'text-white bg-black' : 'text-slate-400 bg-slate-200'} px-2">配送中</span></div>
-                      <div class="flex flex-col items-center gap-2 font-bold"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center font-bold ${currentStep >= 3 ? 'bg-yellow-400 animate-bounce' : 'bg-white'}"><i data-lucide="${currentStep >= 3 ? 'party-popper' : 'gift'}" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-black uppercase ${currentStep >= 3 ? 'text-white bg-black' : 'text-slate-400 bg-slate-200'} px-2">到着！</span></div>
+                      <div class="absolute top-1/2 left-0 h-1 bg-yellow-400 -translate-y-1/2 -z-10 transition-all duration-1000" style="width: ${currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : '100%'}"></div>
+                      <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center bg-yellow-400"><i data-lucide="check" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-heavy uppercase text-white bg-black px-2">受付完了</span></div>
+                      <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center font-heavy ${currentStep >= 2 ? 'bg-yellow-400' : 'bg-white'}"><i data-lucide="truck" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-heavy uppercase ${currentStep >= 2 ? 'text-white bg-black' : 'text-slate-400 bg-slate-200'} px-2">配送中</span></div>
+                      <div class="flex flex-col items-center gap-2"><div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-4 border-black flex items-center justify-center font-heavy ${currentStep >= 3 ? 'bg-yellow-400 animate-bounce' : 'bg-white'}"><i data-lucide="gift" size="16"></i></div><span class="text-[8px] sm:text-[10px] font-heavy uppercase ${currentStep >= 3 ? 'text-white bg-black' : 'text-slate-400 bg-slate-200'} px-2">到着！</span></div>
                     </div>
                     
                     ${currentStep === 2 ? `
@@ -111,40 +157,25 @@
                                 <div class="relative w-32 sm:w-48 h-24 sm:h-32 flex items-end justify-center">
                                     <img src="${DELIVERY_MAN_IMAGE}" class="max-w-full max-h-full object-contain drop-shadow-[6px_6px_0_rgba(0,0,0,0.3)]" />
                                 </div>
-                                <span class="text-[8px] sm:text-[10px] font-black bg-black text-white px-2 py-0.5 rounded-full border-2 border-yellow-400 shadow-xl italic uppercase">Gyoza Express</span>
+                                <span class="text-[8px] sm:text-[10px] font-heavy bg-black text-white px-2 py-0.5 rounded-full border-2 border-yellow-400 shadow-xl italic uppercase">Gyoza Express</span>
                             </div>
                         </div>
                     ` : ''}
                     
-                    <div class="bg-yellow-400 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-black flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-[6px_6px_0_0_rgba(0,0,0,1)] font-black text-5xl sm:text-6xl text-red-600">福</div>
-                    <h1 class="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase italic leading-none font-bold">${currentStep === 3 ? "ALL DELIVERED!" : "SHIPPING NOW!"}</h1>
-                    <p class="text-lg sm:text-xl font-bold text-yellow-300 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] mb-8 max-w-lg mx-auto font-bold">${COMPLETED_MESSAGE}</p>
-                    <div class="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl shadow-[6px_6px_0_0_rgba(0,0,0,1)] inline-flex items-center gap-2 sm:gap-3 transform -rotate-1 font-bold font-bold"><i data-lucide="package" class="text-red-600"></i><span class="text-lg sm:text-xl font-black">${DELIVERY_ESTIMATE}</span></div>
+                    <div class="bg-yellow-400 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-black flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-[6px_6px_0_0_rgba(0,0,0,1)] font-heavy text-5xl sm:text-6xl text-red-600">福</div>
+                    <h1 class="text-3xl sm:text-4xl md:text-6xl font-heavy text-white mb-4 drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase italic leading-none">${currentStep === 3 ? "ALL DELIVERED!" : "SHIPPING NOW!"}</h1>
+                    <p class="text-lg sm:text-xl font-heavy text-yellow-300 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] mb-8 max-w-lg mx-auto font-heavy">${COMPLETED_MESSAGE}</p>
+                    <div class="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl shadow-[6px_6px_0_0_rgba(0,0,0,1)] inline-flex items-center gap-2 sm:gap-3 transform -rotate-1 font-heavy"><i data-lucide="package" class="text-red-600"></i><span class="text-lg sm:text-xl font-heavy">${DELIVERY_ESTIMATE}</span></div>
                   </div>
                 </header>
                 
-                <main class="max-w-3xl mx-auto px-4 text-left relative z-10 font-bold">
-                  <div class="bg-white border-4 border-black rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-[12px_12px_0_0_rgba(0,0,0,1)] font-bold">
-                    <h2 class="text-xl sm:text-2xl font-black mb-6 sm:mb-8 border-b-4 border-black pb-2 italic uppercase tracking-tighter font-bold"><i data-lucide="clock" class="text-red-600" /> History</h2>
-                    <div class="space-y-4 sm:space-y-6">
-                      ${orderedProducts.length > 0 ? orderedProducts.map(item => `
-                        <div class="group flex flex-col sm:flex-row gap-4 bg-slate-50 border-4 border-black p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2.5rem] relative overflow-hidden transition-transform font-bold">
-                          <img src="${item.image}" class="w-full sm:w-24 h-40 sm:h-24 rounded-xl sm:rounded-2xl border-2 border-black object-cover" />
-                          <div class="flex-1 min-w-0 font-bold">
-                            <div class="flex justify-between items-start mb-1 font-bold"><div class="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase italic font-bold font-bold font-bold"><i data-lucide="map-pin" size="10"></i> ${item.prefecture}</div>
-                                ${item.status === 'delivered' ? '<span class="bg-red-600 text-white text-[10px] px-2 font-black rounded border border-black shadow-sm">到着済み</span>' : 
-                                  '<span class="bg-yellow-400 text-black text-[10px] px-2 font-black rounded border border-black animate-pulse">配送中</span>'}
-                            </div>
-                            <p class="font-black text-slate-800 text-lg leading-tight italic font-bold">${item.name}</p>
-                            <p class="text-xs font-bold text-red-600 mt-1 uppercase font-bold">${item.count} PCS × ${item.quantity}</p>
-                            <p class="text-[11px] font-black text-slate-500 mt-2 bg-white border border-slate-200 px-2 py-1 rounded-full w-fit italic font-bold"><i data-lucide="clock" size="12" class="inline"></i> ${item.arrivalDate}</p>
-                          </div>
-                        </div>
-                      `).join('') : '<p class="text-center font-bold text-slate-400 py-10">注文情報が正しく設定されていません 🐼</p>'}
-                    </div>
-                    <div class="mt-8 bg-yellow-50 border-4 border-black border-dashed rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 text-center font-bold">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 italic">Total Capacity</p>
-                        <p class="text-2xl sm:text-4xl font-black text-slate-800 italic uppercase leading-none font-bold">TOTAL ${totalOrderedCount} PCS</p>
+                <main class="max-w-3xl mx-auto px-4 text-left relative z-10">
+                  <div class="bg-white border-4 border-black rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-[12px_12px_0_0_rgba(0,0,0,1)]">
+                    <h2 class="text-xl sm:text-2xl font-heavy mb-6 sm:mb-8 border-b-4 border-black pb-2 italic uppercase tracking-tighter"><i data-lucide="clock" class="text-red-600" /> History</h2>
+                    <div class="space-y-4 sm:space-y-6">${historyCards}</div>
+                    <div class="mt-8 bg-yellow-50 border-4 border-black border-dashed rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 text-center font-heavy">
+                        <p class="text-[10px] font-heavy text-slate-400 uppercase tracking-widest mb-1 italic">Total Capacity</p>
+                        <p class="text-2xl sm:text-4xl font-heavy text-slate-800 italic uppercase leading-none font-heavy">TOTAL ${totalOrderedPcs} PCS</p>
                     </div>
                   </div>
                 </main>
@@ -152,7 +183,7 @@
             `;
         }
 
-        // --- 選択モード描画 (商品名・紹介文 全表示) ---
+        // --- 2. 選択モード (変更なし・全表示維持) ---
         function renderSelectionMode(container) {
             let totalSpent = 0;
             Object.keys(cart).forEach(id => totalSpent += (GYOZA_DATA.find(p => p.id == id).price * cart[id]));
@@ -160,35 +191,40 @@
             REGIONS.forEach(region => {
                 const items = GYOZA_DATA.filter(i => i.region === region);
                 if (items.length === 0) return;
-                regionsHtml += `<section class="mb-12 sm:mb-20"><div class="mb-6 sm:mb-8 relative inline-block"><div class="absolute inset-0 bg-yellow-400 translate-x-1.5 translate-y-1.5 rounded-xl -z-10 border-4 border-black"></div><h2 class="bg-white border-4 border-black text-slate-900 px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-black text-xl sm:text-2xl italic flex items-center gap-3">★ ${region} ★</h2></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 text-left">${items.map(product => {
+                regionsHtml += `<section class="mb-12 sm:mb-20"><div class="mb-6 sm:mb-8 relative inline-block"><div class="absolute inset-0 bg-yellow-400 translate-x-1.5 translate-y-1.5 rounded-xl -z-10 border-4 border-black"></div><h2 class="bg-white border-4 border-black text-slate-900 px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-heavy text-xl sm:text-2xl italic flex items-center gap-3">★ ${region} ★</h2></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 text-left font-heavy">${items.map(product => {
                     const qty = cart[product.id] || 0;
                     const canAdd = (totalSpent + product.price <= ACTUAL_LIMIT);
-                    return `<div class="bg-white border-4 border-black rounded-[2rem] sm:rounded-[2.5rem] shadow-[8px_8px_0_0_rgba(0,0,0,1)] overflow-hidden transition-all hover:-translate-y-1 ${qty > 0 ? 'ring-4 sm:ring-8 ring-yellow-400/40' : ''}"><div class="h-48 sm:h-56 bg-slate-200 relative border-b-4 border-black overflow-hidden group"><div class="absolute top-4 right-4 z-10 bg-black/80 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 font-black shadow-md italic font-bold"><i data-lucide="map-pin" size={10} class="text-yellow-400"></i> ${product.prefecture}</div><img src="${product.image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /></div><div class="p-5 sm:p-6 font-bold"><div class="flex justify-between items-start mb-3 sm:mb-4"><h3 class="text-lg sm:text-xl font-black leading-tight italic flex-1 pr-2 break-words text-slate-800 font-bold">${product.name}</h3><div class="text-right flex-shrink-0 flex items-baseline gap-0.5 font-bold"><span class="text-xl sm:text-2xl font-black text-slate-900">${(product.price/100).toFixed(1)}</span><span class="text-[10px] font-black text-slate-500 italic uppercase font-bold">GP</span></div></div><p class="text-xs text-slate-600 mb-4 sm:mb-6 font-bold leading-relaxed break-words font-bold">${product.description}</p><div class="flex justify-between items-center mb-5 sm:mb-6"><span class="bg-red-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border-2 border-black font-black text-[10px] uppercase shadow-[2px_2px_0_0_rgba(0,0,0,1)]">${product.count} PCS</span><button onclick="showDetail(${product.id})" class="text-[10px] font-black bg-slate-100 border-2 border-black px-2 py-1 rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-1 active:translate-y-0.5"><i data-lucide="search" size="14"></i> 詳細を見る</button></div><div class="flex items-center justify-center bg-black rounded-3xl p-1 sm:p-1.5 gap-4 sm:gap-6 border-2 border-white/20 shadow-inner"><button onclick="changeQty(${product.id}, -1)" class="w-10 h-10 sm:w-12 sm:h-12 bg-white border-2 border-black rounded-xl font-black active:scale-90 font-bold">-</button><span class="text-xl sm:text-2xl font-black text-white italic font-bold">${qty}</span><button onclick="changeQty(${product.id}, 1)" ${canAdd ? '' : 'disabled'} class="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-400 text-black border-2 border-black rounded-xl font-black active:scale-90">+</button></div></div></div>`}).join('')}</div></section>`;
+                    return `<div class="bg-white border-4 border-black rounded-[2rem] sm:rounded-[2.5rem] shadow-[8px_8px_0_0_rgba(0,0,0,1)] overflow-hidden transition-all hover:-translate-y-1 ${qty > 0 ? 'ring-4 sm:ring-8 ring-yellow-400/40' : ''}"><div class="h-48 sm:h-56 bg-slate-200 relative border-b-4 border-black overflow-hidden group"><div class="absolute top-4 right-4 z-10 bg-black/80 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 font-heavy shadow-md italic"><i data-lucide="map-pin" size={10} class="text-yellow-400"></i> ${product.prefecture}</div><img src="${product.image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /></div><div class="p-5 sm:p-6 font-heavy"><div class="flex justify-between items-start mb-3 sm:mb-4"><h3 class="text-lg sm:text-xl font-heavy leading-tight italic flex-1 pr-2 break-words text-slate-800">${product.name}</h3><div class="text-right flex-shrink-0 flex items-baseline gap-0.5"><span class="text-xl sm:text-2xl font-heavy text-slate-900 font-heavy">${(product.price/100).toFixed(1)}</span><span class="text-[10px] font-heavy text-slate-500 italic uppercase">GP</span></div></div><p class="text-xs text-slate-600 mb-4 sm:mb-6 font-heavy leading-relaxed break-words">${product.description}</p><div class="flex justify-between items-center mb-5 sm:mb-6 font-heavy"><span class="bg-red-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border-2 border-black font-heavy text-[10px] uppercase shadow-[2px_2px_0_0_rgba(0,0,0,1)]">${product.count} PCS</span><button onclick="showDetail(${product.id})" class="text-[10px] font-heavy bg-slate-100 border-2 border-black px-2 py-1 rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-1 active:translate-y-0.5"><i data-lucide="search" size="14"></i> 詳細を見る</button></div><div class="flex items-center justify-center bg-black rounded-3xl p-1 sm:p-1.5 gap-4 sm:gap-6 border-2 border-white/20 shadow-inner font-heavy"><button onclick="changeQty(${product.id}, -1)" class="w-10 h-10 sm:w-12 sm:h-12 bg-white border-2 border-black rounded-xl font-heavy active:scale-90">-</button><span class="text-xl sm:text-2xl font-heavy text-white italic">${qty}</span><button onclick="changeQty(${product.id}, 1)" ${canAdd ? '' : 'disabled'} class="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-400 text-black border-2 border-black rounded-xl font-heavy active:scale-90">+</button></div></div></div>`}).join('')}</div></section>`;
             });
 
             container.innerHTML = `
-              <header class="px-4 sm:px-6 py-8 sm:py-12 text-center relative z-10">
+              <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div class="absolute top-[10%] left-[5%] text-4xl sm:text-6xl animate-bounce opacity-20" style="animation-duration: 3s">🐼</div>
+                <div class="absolute top-[20%] right-[10%] text-5xl sm:text-7xl animate-bounce opacity-20" style="animation-duration: 5s">🍥</div>
+                <div class="absolute top-[30%] left-[40%] text-[10rem] sm:text-[15rem] font-heavy text-white opacity-[0.03] rotate-12 select-none uppercase font-heavy">福</div>
+              </div>
+              <header class="px-4 sm:px-6 py-8 sm:py-12 text-center relative z-10 font-heavy">
                 <div class="max-w-2xl mx-auto">
-                    <div class="inline-block relative mb-4 sm:mb-6">
+                    <div class="inline-block relative mb-4 sm:mb-6 font-heavy">
                         <div class="absolute -top-8 -left-10 text-4xl animate-pulse rotate-[-15deg]">🐼</div>
                         <div class="absolute -top-8 -right-10 text-4xl animate-pulse rotate-[15deg]">🍥</div>
-                        <div class="bg-yellow-400 w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-black flex items-center justify-center mx-auto mb-6 shadow-[6px_6px_0_0_rgba(0,0,0,1)] font-bold text-4xl sm:text-5xl text-red-600">福</div>
+                        <div class="bg-yellow-400 w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-black flex items-center justify-center mx-auto mb-6 shadow-[6px_6px_0_0_rgba(0,0,0,1)] font-heavy text-4xl sm:text-5xl text-red-600 font-heavy font-heavy">福</div>
                     </div>
-                    <h1 class="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-2 drop-shadow-[3px_3px_0_rgba(0,0,0,1)] uppercase italic leading-none">Gyoza Feast!</h1>
-                    <p class="text-base sm:text-xl md:text-2xl font-bold text-yellow-300 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] mb-6 sm:mb-8 font-bold">祝・入籍！好きなだけ選びなさい！</p>
-                    <div class="bg-white border-4 border-black p-4 sm:p-6 rounded-3xl shadow-[8px_8px_0_0_rgba(0,0,0,1)] inline-block transform -rotate-1">
-                        <span class="text-[10px] sm:text-[11px] font-bold text-red-600 mb-1 block uppercase tracking-widest text-center italic">Your Selectable Power</span>
-                        <div class="flex items-center justify-center gap-2 sm:gap-3 font-bold"><span class="text-4xl sm:text-5xl font-bold">150.0</span><p class="text-lg sm:text-xl font-bold italic font-bold leading-none">GP</p></div>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl font-heavy text-white mb-2 drop-shadow-[3px_3px_0_rgba(0,0,0,1)] uppercase italic tracking-tighter leading-none font-heavy">Gyoza Feast!</h1>
+                    <p class="text-base sm:text-xl md:text-2xl font-bold text-yellow-300 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] mb-6 sm:mb-8 font-heavy">祝・入籍！好きなだけ選びなさい！</p>
+                    <div class="bg-white border-4 border-black p-4 sm:p-6 rounded-3xl shadow-[8px_8px_0_0_rgba(0,0,0,1)] inline-block transform -rotate-1 font-heavy font-heavy">
+                        <span class="text-[10px] sm:text-[11px] font-heavy text-red-600 mb-1 block uppercase tracking-widest text-center italic font-heavy">Your Selectable Power</span>
+                        <div class="flex items-center justify-center gap-2 sm:gap-3 font-heavy font-heavy font-heavy"><span class="text-4xl sm:text-5xl font-heavy font-heavy">150.0</span><p class="text-lg sm:text-xl font-heavy italic leading-none font-heavy font-heavy">GP</p></div>
                     </div>
                 </div>
               </header>
-              <main class="max-w-4xl mx-auto px-4 py-4 sm:py-8 relative z-10 pb-20 sm:pb-32">${regionsHtml}</main>
+              <main class="max-w-4xl mx-auto px-4 py-4 sm:py-8 relative z-10 pb-20 sm:pb-32 font-heavy">${regionsHtml}</main>
               <div id="status-bar"></div>
             `;
             updateStatusBar();
         }
 
-        // --- バー・アクション等 ---
+        // --- ステータスバー ---
         function updateStatusBar() {
             const barContainer = document.getElementById('status-bar');
             if(!barContainer) return;
@@ -197,27 +233,35 @@
             const currentGP = totalSpent / 100;
             const progressPercent = Math.min((currentGP / 150) * 100, 106.6);
             const isOver = currentGP > 150;
-            barContainer.innerHTML = `<div class="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-50 font-bold"><div class="bg-white border-[4px] sm:border-[5px] border-black rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)] flex items-center justify-between gap-3 sm:gap-6 overflow-hidden"><div class="flex flex-col flex-1 pl-2 sm:pl-4 relative text-left font-bold"><div class="flex items-baseline gap-1.5 font-bold"><span class="text-[8px] sm:text-[11px] font-bold text-slate-400 uppercase italic">Power:</span><span class="text-2xl sm:text-4xl md:text-5xl font-bold italic transition-colors ${isOver ? 'text-red-600' : 'text-slate-900'}">${currentGP.toFixed(1)}</span><span class="text-[10px] sm:text-sm font-bold text-slate-400 italic">/ 150.0</span></div><div class="h-4 sm:h-5 w-full bg-slate-100 border-[3px] sm:border-4 border-black rounded-full mt-2 sm:mt-3 relative shadow-inner overflow-visible"><div class="h-full border-r-[2px] sm:border-r-4 border-black transition-all duration-700 ease-out ${isOver ? 'bg-red-500' : 'bg-yellow-400'}" style="width: ${progressPercent}%"></div><div class="absolute top-0 text-base sm:text-lg transition-all duration-700 -translate-x-1/2 -translate-y-[1px] sm:-translate-y-[2px]" style="left: ${progressPercent}%">🍥</div></div></div><button onclick="showSummaryModal()" class="bg-red-600 text-white border-[3px] sm:border-4 border-black px-6 sm:px-10 py-3 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] font-bold text-lg sm:text-2xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all uppercase italic font-bold">注文! 🐼</button></div></div>`;
+
+            barContainer.innerHTML = `
+                <div class="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-50 font-heavy font-heavy">
+                    <div class="bg-white border-[4px] sm:border-[5px] border-black rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)] flex items-center justify-between gap-3 sm:gap-6 overflow-hidden font-heavy font-heavy">
+                        <div class="flex flex-col flex-1 pl-2 sm:pl-4 relative text-left font-heavy font-heavy font-heavy font-heavy">
+                            <div class="flex items-baseline gap-1.5 font-heavy font-heavy font-heavy">
+                                <span class="text-[8px] sm:text-[11px] font-heavy text-slate-400 uppercase italic font-heavy font-heavy font-heavy">Power:</span>
+                                <span class="text-2xl sm:text-4xl md:text-5xl font-heavy italic transition-colors ${isOver ? 'text-red-600 font-heavy font-heavy' : 'text-slate-900 font-heavy font-heavy'}">${currentGP.toFixed(1)}</span>
+                                <span class="text-[10px] sm:text-sm font-heavy text-slate-400 italic font-heavy font-heavy font-heavy">/ 150.0</span>
+                            </div>
+                            <div class="h-4 sm:h-5 w-full bg-slate-100 border-[3px] sm:border-4 border-black rounded-full mt-2 sm:mt-3 relative shadow-inner overflow-visible font-heavy font-heavy font-heavy">
+                                <div class="h-full border-r-[2px] sm:border-r-4 border-black transition-all duration-700 ease-out ${isOver ? 'bg-red-500' : 'bg-yellow-400'}" style="width: ${progressPercent}%"></div>
+                                <div class="absolute top-0 text-base sm:text-lg transition-all duration-700 -translate-x-1/2 -translate-y-[1px] sm:-translate-y-[2px]" style="left: ${progressPercent}%">🍥</div>
+                            </div>
+                        </div>
+                        <button onclick="showSummaryModal()" class="bg-red-600 text-white border-[3px] sm:border-4 border-black px-6 sm:px-10 py-3 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] font-heavy text-lg sm:text-2xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all uppercase italic font-heavy font-heavy font-heavy">注文! 🐼</button>
+                    </div>
+                </div>
+            `;
         }
 
-        function changeQty(id, delta) {
-            const current = cart[id] || 0;
-            const next = current + delta;
-            if(next < 0) return;
-            let total = 0;
-            Object.keys(cart).forEach(kid => total += (GYOZA_DATA.find(p => p.id == kid).price * (kid == id ? next : cart[kid])));
-            if (delta > 0 && total > ACTUAL_LIMIT) return alert("これ以上は予算オーバーあるよ！🐼");
-            cart[id] = next;
-            render();
-        }
-
+        // --- 詳細・まとめモーダル ---
         function showDetail(id) {
             const p = GYOZA_DATA.find(i => String(i.id) === String(id));
             const overlay = document.createElement('div');
             overlay.id = "modal-overlay";
-            overlay.className = "fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 animate-in font-bold";
+            overlay.className = "fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 animate-in font-heavy font-heavy";
             overlay.onclick = closeModal;
-            overlay.innerHTML = `<div class="bg-white border-4 border-black w-full max-w-xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden relative shadow-2xl modal-body font-bold font-bold" onclick="event.stopPropagation()"><button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-white border-2 border-black rounded-full font-bold flex items-center justify-center z-20 shadow-xl active:scale-90 font-bold">✕</button><div class="flex-1 overflow-y-auto custom-scrollbar max-h-[90vh] font-bold"><div class="h-48 sm:h-64 bg-slate-200 relative border-b-4 border-black overflow-hidden"><img src="${p.image}" class="w-full h-full object-cover" /><div class="absolute bottom-4 left-4 flex flex-wrap gap-2">${p.tags.map(tag => `<span class="text-[8px] sm:text-[10px] font-bold bg-yellow-400 border-2 border-black px-2 sm:px-3 py-1 rounded-full italic">#${tag}</span>`).join('')}</div></div><div class="p-6 sm:p-8 text-left font-bold"><div class="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8 font-bold font-bold"><div class="w-16 h-16 sm:w-20 sm:h-20 ${p.color} rounded-[1.5rem] sm:rounded-[2rem] border-4 border-black flex items-center justify-center text-3xl sm:text-5xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] flex-shrink-0 font-bold font-bold font-bold">${p.icon}</div><div class="flex-1 min-w-0 font-bold"><h3 class="text-xl sm:text-2xl font-bold leading-tight italic break-words text-slate-800 font-bold">${p.name}</h3><p class="text-[10px] sm:text-sm font-bold text-red-600 uppercase tracking-widest">${p.count} PIECES PACK</p></div></div><div class="space-y-6 sm:space-y-8 font-bold text-slate-700"><div><p class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Masterpiece Story</p><p class="font-bold leading-relaxed italic border-l-4 sm:border-l-8 border-yellow-400 pl-4 sm:pl-6 bg-slate-50 py-4 rounded-r-[1.5rem] text-sm sm:text-lg">"${p.longDescription}"</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center font-bold"><div class="bg-slate-50 border-4 border-black p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] font-bold font-bold"><p class="text-[10px] font-bold text-red-600 mb-1 uppercase flex items-center justify-center gap-1.5 font-bold font-bold"><i data-lucide="utensils" size="14"></i> Pairing</p><p class="font-bold text-xs sm:text-sm font-bold">${p.pairing}</p></div><div class="bg-slate-50 border-4 border-black p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] font-bold font-bold"><p class="text-[10px] font-bold text-blue-600 mb-1 uppercase italic font-bold">✨ Sauce</p><p class="font-bold text-xs sm:text-sm font-bold">${p.sauce}</p></div></div><div class="bg-slate-900 text-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] relative shadow-xl font-bold"><p class="text-yellow-400 font-bold text-[10px] sm:text-xs mb-2 uppercase italic tracking-widest flex items-center gap-2 font-bold"><i data-lucide="flame" size="16"></i> Master's Tip</p><p class="font-bold italic text-xs sm:text-sm leading-relaxed">${p.cooking}</p></div></div><button onclick="closeModal()" class="w-full mt-8 sm:mt-10 bg-red-600 text-white py-4 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] font-bold text-lg sm:text-xl border-4 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all font-bold">閉じるあるよ！</button></div></div></div>`;
+            overlay.innerHTML = `<div class="bg-white border-4 border-black w-full max-w-xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden relative shadow-2xl modal-body font-heavy font-heavy font-heavy font-heavy" onclick="event.stopPropagation()"><button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-white border-2 border-black rounded-full font-heavy flex items-center justify-center z-20 shadow-xl active:scale-90 font-heavy font-heavy">✕</button><div class="flex-1 overflow-y-auto custom-scrollbar max-h-[90vh] font-heavy font-heavy"><div class="h-48 sm:h-64 bg-slate-200 relative border-b-4 border-black overflow-hidden font-heavy font-heavy font-heavy"><img src="${p.image}" class="w-full h-full object-cover font-heavy font-heavy font-heavy" /><div class="absolute bottom-4 left-4 flex flex-wrap gap-2 font-heavy font-heavy font-heavy font-heavy font-heavy">${p.tags.map(tag => `<span class="text-[8px] sm:text-[10px] font-heavy bg-yellow-400 border-2 border-black px-2 sm:px-3 py-1 rounded-full italic font-heavy font-heavy">#${tag}</span>`).join('')}</div></div><div class="p-6 sm:p-8 text-left font-heavy font-heavy font-heavy"><div class="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-8 font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><div class="w-16 h-16 sm:w-20 sm:h-20 bg-yellow-50 rounded-[1.5rem] sm:rounded-[2rem] border-4 border-black flex items-center justify-center text-3xl sm:text-5xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] flex-shrink-0 font-heavy font-heavy font-heavy">${p.icon}</div><div class="flex-1 min-w-0 font-heavy font-heavy font-heavy font-heavy"><h3 class="text-xl sm:text-2xl font-heavy font-heavy leading-tight italic break-words text-slate-800 font-heavy font-heavy font-heavy font-heavy font-heavy">${p.name}</h3><p class="text-[10px] sm:text-sm font-heavy text-red-600 uppercase tracking-widest font-heavy font-heavy font-heavy">${p.count} PIECES PACK</p></div></div><div class="space-y-6 sm:space-y-8 font-heavy text-slate-700 font-heavy font-heavy font-heavy font-heavy font-heavy"><div><p class="text-[10px] sm:text-[11px] font-heavy text-slate-400 uppercase tracking-widest mb-2 italic font-heavy font-heavy font-heavy">Masterpiece Story</p><p class="font-bold leading-relaxed italic border-l-4 sm:border-l-8 border-yellow-400 pl-4 sm:pl-6 bg-slate-50 py-4 rounded-r-[1.5rem] text-sm sm:text-lg font-heavy font-heavy font-heavy">"${p.longDescription}"</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center font-heavy font-heavy font-heavy"><div class="bg-slate-50 border-4 border-black p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2.5rem] font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><p class="text-[10px] font-heavy text-red-600 mb-1 uppercase flex items-center justify-center gap-1.5 font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><i data-lucide="utensils" size="14"></i> Pairing</p><p class="font-bold text-xs sm:text-sm font-heavy font-heavy font-heavy font-heavy font-heavy">${p.pairing}</p></div><div class="bg-slate-50 border-4 border-black p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2.5rem] font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><p class="text-[10px] font-heavy text-blue-600 mb-1 uppercase italic font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">✨ Sauce</p><p class="font-bold text-xs sm:text-sm font-heavy font-heavy font-heavy font-heavy font-heavy">${p.sauce}</p></div></div><div class="bg-slate-900 text-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] relative shadow-xl font-heavy font-heavy font-heavy font-heavy font-heavy"><p class="text-yellow-400 font-heavy text-[10px] sm:text-xs mb-2 uppercase italic tracking-widest flex items-center gap-2 font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><i data-lucide="flame" size="16"></i> Master's Tip</p><p class="font-bold italic text-xs sm:text-sm leading-relaxed font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">${p.cooking}</p></div></div><button onclick="closeModal()" class="w-full mt-8 sm:mt-10 bg-red-600 text-white py-4 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] font-heavy font-heavy text-lg sm:text-xl border-4 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all font-heavy font-heavy font-heavy font-heavy font-heavy">閉じるあるよ！</button></div></div></div>`;
             document.body.appendChild(overlay);
             if (window.lucide) window.lucide.createIcons();
         }
@@ -229,15 +273,26 @@
             const itemsHtml = activeIds.map(id => {
                 const p = GYOZA_DATA.find(i => String(i.id) === String(id));
                 totalCount += (p.count * cart[id]);
-                return `<div class="bg-white border-4 border-black p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between items-center shadow-md text-left transition-transform font-bold"><div class="min-w-0 flex-1 pr-3 sm:pr-4"><p class="font-bold text-slate-800 leading-tight text-base sm:text-lg italic mb-1 break-words font-bold">${p.name}</p><div class="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase italic font-bold"><i data-lucide="map-pin" size="8" class="inline"></i> ${p.prefecture}</div></div><div class="bg-slate-900 text-white px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl font-bold text-xl sm:text-2xl italic border-[3px] sm:border-4 border-yellow-400 flex-shrink-0 shadow-lg min-w-[60px] sm:min-w-[70px] text-center">x${cart[id]}</div></div>`;
+                return `<div class="bg-white border-4 border-black p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between items-center shadow-md text-left transition-transform font-heavy font-heavy font-heavy"><div class="min-w-0 flex-1 pr-3 sm:pr-4 font-heavy font-heavy font-heavy font-heavy font-heavy"><p class="font-heavy text-slate-800 leading-tight text-base sm:text-lg italic mb-1 break-words font-heavy font-heavy font-heavy font-heavy font-heavy">${p.name}</p><div class="text-[8px] sm:text-[10px] font-heavy text-slate-400 uppercase italic font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><i data-lucide="map-pin" size="8" class="inline font-heavy font-heavy"></i> ${p.prefecture}</div></div><div class="bg-slate-900 text-white px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl font-heavy text-xl sm:text-2xl italic border-[3px] sm:border-4 border-yellow-400 flex-shrink-0 shadow-lg min-w-[60px] sm:min-w-[70px] text-center font-heavy font-heavy font-heavy font-heavy">x${cart[id]}</div></div>`;
             }).join('');
             const overlay = document.createElement('div');
             overlay.id = "modal-overlay";
-            overlay.className = "fixed inset-0 bg-black/85 backdrop-blur-xl z-[110] flex items-center justify-center p-3 sm:p-4 animate-in";
+            overlay.className = "fixed inset-0 bg-black/85 backdrop-blur-xl z-[110] flex items-center justify-center p-3 sm:p-4 animate-in font-heavy font-heavy font-heavy";
             overlay.onclick = closeModal;
-            overlay.innerHTML = `<div class="bg-yellow-400 border-[6px] sm:border-[8px] border-black w-full max-w-md rounded-[2.5rem] sm:rounded-[4rem] p-6 sm:p-10 shadow-[10px_10px_0_0_rgba(255,77,77,1)] relative text-center font-bold" onclick="event.stopPropagation()"><div class="mb-6 sm:mb-10 relative font-bold"><div class="w-20 h-20 sm:w-28 sm:h-28 bg-white border-4 border-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-xl animate-bounce text-4xl sm:text-6xl font-bold text-red-600">福</div><h3 class="text-3xl sm:text-5xl font-bold italic uppercase leading-none font-bold">Perfect!</h3><p class="font-bold text-red-700 bg-white/70 inline-block px-4 py-1 rounded-full mt-2 sm:mt-3 border-2 sm:border-4 border-red-700/20 shadow-sm text-xs sm:text-base font-bold font-bold">🐼 パンダも感動するセレクト！</p></div><div class="space-y-3 mb-6 sm:mb-10 max-h-48 sm:max-h-64 overflow-y-auto pr-2 custom-scrollbar font-bold font-bold">${itemsHtml}</div><div class="bg-white border-4 border-black rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 mb-6 sm:mb-10 shadow-inner text-center font-bold font-bold"><p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase mb-1 italic tracking-widest font-bold">Total Capacity</p><p class="text-2xl sm:text-4xl font-bold text-slate-800 italic uppercase leading-none">TOTAL ${totalCount} PCS</p></div><button onclick="copyList(${totalCount})" id="copy-btn" class="w-full bg-red-600 text-white border-4 border-black py-4 sm:py-6 rounded-[1.5rem] sm:rounded-[2.5rem] font-bold text-lg sm:text-2xl shadow-[8px_8px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all uppercase italic font-bold font-bold">リストをコピー 🐼</button><button onclick="closeModal()" class="mt-4 sm:mt-6 font-black underline text-[10px] sm:text-sm uppercase block mx-auto tracking-widest font-bold font-bold">選び直すあるよ！</button></div>`;
+            overlay.innerHTML = `<div class="bg-yellow-400 border-[6px] sm:border-[8px] border-black w-full max-w-md rounded-[2.5rem] sm:rounded-[4rem] p-6 sm:p-10 shadow-[10px_10px_0_0_rgba(255,77,77,1)] relative text-center font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy" onclick="event.stopPropagation()"><div class="mb-6 sm:mb-10 relative font-heavy font-heavy font-heavy font-heavy font-heavy"><div class="w-20 h-20 sm:w-28 sm:h-28 bg-white border-4 border-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-xl animate-bounce text-4xl sm:text-6xl font-heavy text-red-600 font-heavy font-heavy font-heavy font-heavy">福</div><h3 class="text-3xl sm:text-5xl font-heavy font-heavy italic uppercase leading-none font-heavy font-heavy font-heavy font-heavy font-heavy">Perfect!</h3><p class="font-bold text-red-700 bg-white/70 inline-block px-4 py-1 rounded-full mt-2 sm:mt-3 border-2 sm:border-4 border-red-700/20 shadow-sm text-xs sm:text-base font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">🐼 パンダも感動するセレクト！</p></div><div class="space-y-3 mb-6 sm:mb-10 max-h-48 sm:max-h-64 overflow-y-auto pr-2 custom-scrollbar font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">${itemsHtml}</div><div class="bg-white border-4 border-black rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 mb-6 sm:mb-10 shadow-inner text-center font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy"><p class="text-[10px] sm:text-xs font-heavy text-slate-400 uppercase mb-1 italic tracking-widest font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">Total Capacity</p><p class="text-2xl sm:text-4xl font-heavy font-heavy text-slate-800 italic uppercase leading-none font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">TOTAL ${totalCount} PCS</p></div><button onclick="copyList(${totalCount})" id="copy-btn" class="w-full bg-red-600 text-white border-4 border-black py-4 sm:py-6 rounded-[1.5rem] sm:rounded-[2.5rem] font-heavy text-lg sm:text-2xl shadow-[8px_8px_0_0_rgba(0,0,0,1)] active:scale-95 transition-all uppercase italic font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">リストをコピー 🐼</button><button onclick="closeModal()" class="mt-4 sm:mt-6 font-heavy underline text-[10px] sm:text-sm uppercase block mx-auto tracking-widest font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy font-heavy">選び直すあるよ！</button></div>`;
             document.body.appendChild(overlay);
-            if (window.lucide) window.lucide.createIcons();
+        }
+
+        // --- 汎用アクション ---
+        function changeQty(id, delta) {
+            const current = cart[id] || 0;
+            const next = current + delta;
+            if(next < 0) return;
+            let total = 0;
+            Object.keys(cart).forEach(kid => total += (GYOZA_DATA.find(p => p.id == kid).price * (kid == id ? next : cart[kid])));
+            if (delta > 0 && total > ACTUAL_LIMIT) return alert("これ以上は予算オーバーあるよ！🐼");
+            cart[id] = next;
+            render();
         }
 
         function copyList(totalPcs) {
