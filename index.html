@@ -182,4 +182,98 @@
               </header>
 
               <main className="max-w-4xl mx-auto px-4 py-8 relative z-10">
-                {REGIONS
+                {REGIONS.map(region => {
+                  const items = GYOZA_DATA.filter(i => i.region === region);
+                  if (items.length === 0) return null;
+                  return (
+                    <section key={region} className="mb-20">
+                      <div className="mb-8 relative inline-block">
+                        <div className="absolute inset-0 bg-yellow-400 translate-x-2 translate-y-2 rounded-xl -z-10 border-4 border-black"></div>
+                        <h2 className="bg-white border-4 border-black text-slate-900 px-8 py-3 rounded-xl font-black text-2xl italic">★ {region} ★</h2>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-10">
+                        {items.map(product => {
+                          const inCart = cart.find(i => i.id === product.id)?.quantity || 0;
+                          return (
+                            <div key={product.id} className={`bg-white border-4 border-black rounded-[2.5rem] shadow-[10px_10px_0_0_rgba(0,0,0,1)] overflow-hidden transition-all hover:-translate-y-1 ${inCart > 0 ? 'ring-8 ring-yellow-400/40' : ''}`}>
+                                <div className="h-56 bg-slate-200 relative border-b-4 border-black overflow-hidden group">
+                                    <div className="absolute top-4 right-4 z-10 bg-black/80 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 shadow-md font-black"><Icon name="map-pin" size={10} className="text-yellow-400" /> {product.prefecture}</div>
+                                    <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                </div>
+                                <div className="p-6 text-left">
+                                    <h3 className="text-xl font-black mb-2 h-14 overflow-hidden leading-tight italic">{product.name}</h3>
+                                    <p className="text-xs text-slate-600 mb-6 font-bold leading-relaxed">{product.description}</p>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <span className="bg-red-600 text-white px-3 py-1.5 rounded-lg border-2 border-black font-black text-[10px] uppercase shadow-[2px_2px_0_0_rgba(0,0,0,1)]">{product.count} PCS</span>
+                                        <button onClick={() => setSelectedDetail(product)} className="text-[10px] font-black bg-slate-100 border-2 border-black px-2 py-1 rounded hover:bg-black hover:text-white transition-all flex items-center gap-1"><Icon name="search" size={12} /> 詳細を見る</button>
+                                    </div>
+                                    <div className="flex items-center justify-center bg-black rounded-3xl p-1.5 gap-6 border-2 border-white/20">
+                                        <button onClick={() => removeFromCart(product.id)} className="w-12 h-12 bg-white border-2 border-black rounded-xl font-black active:scale-90">-</button>
+                                        <span className="text-2xl font-black text-white italic">{inCart}</span>
+                                        <button onClick={() => addToCart(product)} disabled={totalSpent + product.price > 16000} className="w-12 h-12 bg-yellow-400 border-2 border-black rounded-xl font-black active:scale-90 disabled:bg-slate-700">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </main>
+
+              <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-50">
+                <div className="bg-white border-[5px] border-black rounded-[3rem] p-6 shadow-[12px_12px_0_0_rgba(0,0,0,1)] flex items-center justify-between gap-6">
+                  <div className="text-left pl-4"><p className="text-[10px] font-black text-slate-400 uppercase italic">Power Status:</p><p className="text-4xl font-black italic">{currentGP.toFixed(1)} <span className="text-sm">/ 150.0</span></p></div>
+                  <button onClick={() => setShowSummary(true)} disabled={cart.length === 0} className="bg-red-600 text-white border-4 border-black px-10 py-5 rounded-[2rem] font-black text-2xl shadow-[6px_6px_0_0_rgba(0,0,0,1)] active:translate-y-1 disabled:bg-slate-300">注文！ 🐼</button>
+                </div>
+              </div>
+
+              {selectedDetail && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setSelectedDetail(null)}>
+                  <div className="bg-white border-4 border-black w-full max-w-lg rounded-[3rem] overflow-hidden relative shadow-2xl animate-in" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setSelectedDetail(null)} className="absolute top-4 right-4 w-10 h-10 bg-white border-2 border-black rounded-full font-black flex items-center justify-center z-20">✕</button>
+                    <div className="p-8 text-left max-h-[90vh] overflow-y-auto custom-scrollbar">
+                        <h3 className="text-2xl font-black mb-4 italic leading-tight">{selectedDetail.name}</h3>
+                        <img src={selectedDetail.image} className="w-full h-56 object-cover rounded-2xl border-4 border-black mb-6 shadow-lg" />
+                        <div className="bg-yellow-50 p-6 rounded-2xl border-2 border-black mb-6 italic font-bold">"{selectedDetail.longDescription}"</div>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-slate-50 p-4 rounded-xl border-2 border-black text-center"><p className="text-[10px] font-black text-red-600 mb-1 uppercase flex items-center justify-center gap-1"><Icon name="utensils" size={14}/> Pairing</p><p className="font-bold text-sm">{selectedDetail.pairing}</p></div>
+                            <div className="bg-slate-50 p-4 rounded-xl border-2 border-black text-center"><p className="text-[10px] font-black text-blue-600 mb-1 uppercase flex items-center justify-center gap-1">✨ Sauce</p><p className="font-bold text-sm">{selectedDetail.sauce}</p></div>
+                        </div>
+                        <div className="bg-slate-900 text-white p-6 rounded-2xl relative"><p className="text-yellow-400 font-black text-xs mb-2 uppercase">Master's Tip</p><p className="font-bold italic">{selectedDetail.cooking}</p></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showSummary && (
+                <div className="fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4" onClick={() => setShowSummary(false)}>
+                  <div className="bg-yellow-400 border-8 border-black w-full max-w-md rounded-[3rem] p-10 shadow-[20px_20px_0_0_rgba(255,77,77,1)] relative animate-in" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-4xl font-black mb-6 italic uppercase text-center">Order List!</h3>
+                    <div className="space-y-3 mb-8 max-h-64 overflow-y-auto pr-3 custom-scrollbar">
+                      {cart.map(item => (
+                        <div key={item.id} className="bg-white border-4 border-black p-4 rounded-xl flex justify-between items-center shadow-md"><span className="font-black text-left truncate flex-1 text-sm">{item.name}</span><span className="bg-black text-white px-3 py-1 rounded-lg font-black ml-2 text-xl">x{item.quantity}</span></div>
+                      ))}
+                    </div>
+                    <button onClick={() => {
+                        const text = `【祝・入籍】リクエストリスト🥟\n${cart.map(i => `・${i.name} x ${i.quantity}`).join('\n')}`;
+                        navigator.clipboard.writeText(text);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }} className="w-full bg-red-600 text-white border-4 border-black py-4 rounded-2xl font-black text-2xl shadow-[6px_6px_0_0_rgba(0,0,0,1)] mb-6">
+                        {copied ? "コピー完了あるよ！ ✅" : "リストをコピー 🐼"}
+                    </button>
+                    <button onClick={() => setShowSummary(false)} className="w-full font-black underline text-sm uppercase text-center">選び直す</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
