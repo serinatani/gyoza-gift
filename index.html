@@ -169,8 +169,15 @@
 
                     ${currentStep === 1 ? `
                         <div class="relative w-full flex flex-col items-center justify-center mt-1 mb-0 animate-in">
-                            <div class="w-64 h-64 sm:w-96 sm:h-96 flex items-center justify-center">
-                                <img src="${STAFF_IMAGE}" class="max-w-full max-h-full object-contain" alt="Staff" />
+                            <div class="relative w-64 h-64 sm:w-96 sm:h-96 flex items-center justify-center">
+                                <div class="absolute top-0 left-10 text-4xl sm:text-5xl animate-bounce drop-shadow-lg" style="animation-delay: 0.1s;">🧧</div>
+                                <div class="absolute top-4 right-12 text-4xl sm:text-5xl animate-bounce drop-shadow-lg" style="animation-delay: 0.3s;">🐉</div>
+                                <div class="absolute bottom-10 left-4 text-4xl sm:text-5xl animate-bounce drop-shadow-lg" style="animation-delay: 0.5s;">🐉</div>
+                                <div class="absolute bottom-2 right-8 text-4xl sm:text-5xl animate-bounce drop-shadow-lg" style="animation-delay: 0.7s;">🧧</div>
+                                <div class="absolute top-1/2 left-0 -translate-y-1/2 text-3xl sm:text-4xl animate-pulse drop-shadow-lg">🧧</div>
+                                <div class="absolute top-1/2 right-0 -translate-y-1/2 text-3xl sm:text-4xl animate-pulse drop-shadow-lg">🐉</div>
+
+                                <img src="${STAFF_IMAGE}" class="max-w-full max-h-full object-contain relative z-10" alt="Staff" />
                             </div>
                         </div>
                     ` : ''}
