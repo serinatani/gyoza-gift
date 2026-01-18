@@ -29,11 +29,13 @@
         // 【管理者設定】
         // ==========================================
         let ORDER_COMPLETED = true; 
-        const ORDER_STATUS = 'delivered'; // 'preparing'or'shipping'or'delivered' に書き換えます
+        const ORDER_STATUS = 'delivered'; // 'delivered' にすると到着画面になります
         const DELIVERY_MAN_IMAGE = "my-delivery.png"; 
-        const STAFF_IMAGE = "staff.png"; // ★ここを追加（店員の写真画像パス）
+        const STAFF_IMAGE = "staff.png"; 
+        const CHEF_IMAGE = "chef.png"; // ★ここを追加（料理長の写真画像パス）
         const COMPLETED_MESSAGE = "全国の餃子職人たちが、順次発送の準備を進めているあるよ！";
         const DELIVERY_ESTIMATE = "2月上旬頃に到着予定！";
+        
 
         // ==========================================
         // 【履歴画面に表示するリスト】
@@ -164,23 +166,20 @@
                     ` : ''}
                     
                     <div class="bg-yellow-400 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-black flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-[6px_6px_0_0_rgba(0,0,0,1)] text-5xl sm:text-6xl text-red-600 font-bold">福</div>
-                    
                     <h1 class="text-3xl sm:text-4xl md:text-6xl text-white mb-0 drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase italic leading-none font-bold">${currentStep === 3 ? "ALL DELIVERED!" : (currentStep === 1 ? "ORDER RECEIVED!" : "SHIPPING NOW!")}</h1>
+
+                    ${currentStep === 3 ? `
+                        <div class="relative w-full flex flex-col items-center justify-center mt-1 mb-0 animate-in">
+                            <div class="w-64 h-64 sm:w-96 sm:h-96 flex items-center justify-center">
+                                <img src="${CHEF_IMAGE}" class="max-w-full max-h-full object-contain" alt="Chef" />
+                            </div>
+                        </div>
+                    ` : ''}
 
                     ${currentStep === 1 ? `
                         <div class="relative w-full flex flex-col items-center justify-center mt-1 mb-0 animate-in">
-                            <div class="relative w-72 h-72 sm:w-[30rem] sm:h-[30rem] flex items-center justify-center">
-                                
-                                <div class="absolute top-10 -left-4 sm:top-16 sm:-left-12 text-4xl sm:text-6xl animate-bounce pointer-events-none z-0" style="animation-delay: 0.1s;">🧧</div>
-                                <div class="absolute top-14 -right-4 sm:top-20 sm:-right-12 text-4xl sm:text-6xl animate-bounce pointer-events-none z-0" style="animation-delay: 0.3s;">🐉</div>
-                                
-                                <div class="absolute bottom-10 -left-6 sm:bottom-16 sm:-left-16 text-4xl sm:text-6xl animate-bounce pointer-events-none z-0" style="animation-delay: 0.5s;">🐉</div>
-                                <div class="absolute bottom-6 -right-6 sm:bottom-12 sm:-right-16 text-4xl sm:text-6xl animate-bounce pointer-events-none z-0" style="animation-delay: 0.7s;">🧧</div>
-                                
-                                <div class="absolute top-1/2 -left-8 sm:-left-20 -translate-y-1/2 text-3xl sm:text-5xl animate-pulse pointer-events-none z-0">🧧</div>
-                                <div class="absolute top-1/2 -right-8 sm:-right-20 -translate-y-1/2 text-3xl sm:text-5xl animate-pulse pointer-events-none z-0">🐉</div>
-
-                                <img src="${STAFF_IMAGE}" class="w-64 h-64 sm:w-96 sm:h-96 object-contain relative z-10" alt="Staff" />
+                            <div class="w-64 h-64 sm:w-96 sm:h-96 flex items-center justify-center">
+                                <img src="${STAFF_IMAGE}" class="max-w-full max-h-full object-contain" alt="Staff" />
                             </div>
                         </div>
                     ` : ''}
